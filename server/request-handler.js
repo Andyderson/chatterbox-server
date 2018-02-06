@@ -36,9 +36,13 @@ var requestHandler = function(request, response) {
         sendResponse(response, storage, 200);
       },
       'POST': function(request, response) {
-        postRequest(request, function(data) {
+        postRequest(request, response, function(data) {
           console.log(data);
+          storage.results.push(data);
         });
+      },
+      'OPTIONS': function(request, response) {
+        sendResponse(response, 'swag', 200);
       }
     };
 
@@ -48,8 +52,6 @@ var requestHandler = function(request, response) {
     } else {
       send404(request, response);
     }
-
-    // actions['GET'](request, response);
   };
 
   var handleRequestUsernames = function(request, response) {
@@ -67,15 +69,12 @@ var requestHandler = function(request, response) {
   }
 
   var urlParts = url.parse(request.url);
-  console.log('HEY LOOK AT THIS', urlParts.path === '/classes/messages');
-  var route = routes[urlParts.path];
+  var route = routes[urlParts.pathname];
 
   if (route) {
     route(request, response);
-    console.log('HELLO!!');
   } else {
     send404(request, response);
-    console.log('IM WORKING!!!');
   }
 
 };
@@ -115,11 +114,20 @@ var sendResponse = function(response, data, statusCode) {
 
 // description: posts requests to server
 // param: request Request from client to server
+// param: reponse Information to be sent to client in response to http request
+// param: statusCode Refers to client-side errors
 // param: callback What to do with the data
-var postRequest = function(request, callback) {
+var postRequest = function(request, response, callback) {
+  var statusCode = 201;
   var data = '';
   request.on('data', function(chunk) { data += chunk; });
-  request.on('end', function() { callback(data); });
+  request.on('end', function() { callback(JSON.parse(data)); });
+
+  var headers = defaultCorsHeaders;
+  headers['Content-Type'] = 'application/json';
+  response.writeHead(statusCode, headers);
+
+  response.end();
 }
 
 exports.requestHandler = requestHandler;
