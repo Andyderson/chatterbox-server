@@ -13,6 +13,14 @@ this file and include it in basic-server.js so that it actually works.
 *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html.
 
 **************************************************************/
+var defaultCorsHeaders = { //TODO: research what defaultCorsHeaders is
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'access-control-allow-headers': 'content-type, accept',
+  'access-control-max-age': 10 // Seconds.
+};
+
+
 var requestHandler = function(request, response) {
   // Request and Response come from node's http module.
   //
@@ -30,6 +38,7 @@ var requestHandler = function(request, response) {
   // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
+
   var handleRequestMessages = function(request, response) {
     var actions = {
       'GET': function(request, response) {
@@ -39,10 +48,13 @@ var requestHandler = function(request, response) {
         postRequest(request, response, function(data) {
           console.log(data);
           storage.results.push(data);
-        });
+        }); 
       },
       'OPTIONS': function(request, response) {
-        sendResponse(response, 'swag', 200);
+        sendResponse(response, 'Options', 201);
+       
+        //  response.writeHead(200, headers);
+        //  response.end();
       }
     };
 
@@ -93,12 +105,6 @@ var send404 = function(request, response) {
 // Another way to get around this restriction is to serve you chat
 // client from this domain by setting up static file serving.
 
-var defaultCorsHeaders = { //TODO: research what defaultCorsHeaders is
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'access-control-allow-headers': 'content-type, accept',
-  'access-control-max-age': 10 // Seconds.
-};
 
 // description: Sending of data as a response to client
 // param: response Information to be sent to client in response to http request
