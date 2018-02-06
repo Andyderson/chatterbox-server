@@ -1,3 +1,5 @@
+var url = require('url');
+var storage = require('./storage.js');
 /*************************************************************
 
 You should implement your request handler function in this file.
@@ -28,39 +30,59 @@ var requestHandler = function(request, response) {
   // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
+  var handleRequestMessages = function(request, response) {
+    var actions = {
+      'GET': function(request, response) {
+        sendResponse(response, storage, 200);
+      },
+      'POST': function(request, response) {
+        postRequest(request, function(data) {
+          console.log(data);
+        });
+      }
+    };
+
+    var action = actions[request.method];
+    if (action) {
+      action(request, response);
+    } else {
+      send404(request, response);
+    }
+
+    // actions['GET'](request, response);
+  };
+
+  var handleRequestUsernames = function(request, response) {
+    sendResponse(response, 'This is usernames!', 200);
+  };
+
+  var handleRequestRoomnames = function(request, response) {
+
+  };
+
   var routes = {
-    '/classes/messages/usernames': function() {},
-    '/classes/messages': function() {},//TODO: handler messages request
-    //TODO: add more routes
+    '/classes/messages': handleRequestMessages,
+    '/classes/messages/usernames': handleRequestUsernames,
+    '/classes/messages/roomnames': handleRequestRoomnames
   }
 
-  sendResponse(response, 'Something nicer', 200);
+  var urlParts = url.parse(request.url);
+  console.log('HEY LOOK AT THIS', urlParts.path === '/classes/messages');
+  var route = routes[urlParts.path];
 
-//   // The outgoing status.
-//   var statusCode = 200;
+  if (route) {
+    route(request, response);
+    console.log('HELLO!!');
+  } else {
+    send404(request, response);
+    console.log('IM WORKING!!!');
+  }
 
-//   // See the note below about CORS headers.
-//   var headers = defaultCorsHeaders;
-
-//   // Tell the client we are sending them plain text.
-//   //
-//   // You will need to change this if you are sending something
-//   // other than plain text, like JSON or HTML.
-//   headers['Content-Type'] = 'text/plain';
-
-//   // .writeHead() writes to the request line and headers of the response,
-//   // which includes the status and all headers.
-//   response.writeHead(statusCode, headers);
-
-//   // Make sure to always call response.end() - Node may not send
-//   // anything back to the client until you do. The string you pass to
-//   // response.end() will be the body of the response - i.e. what shows
-//   // up in the browser.
-//   //
-//   // Calling .end "flushes" the response's internal buffer, forcing
-//   // node to actually send all the data over to the client.
-//   response.end('Hello, World!');
 };
+
+var send404 = function(request, response) {
+  sendResponse(response, 'Something nicer', 404);
+}
 
 // These headers will allow Cross-Origin Resource Sharing (CORS).
 // This code allows this server to talk to websites that
@@ -89,6 +111,15 @@ var sendResponse = function(response, data, statusCode) {
   headers['Content-Type'] = 'application/json';
   response.writeHead(statusCode, headers);
   response.end(JSON.stringify(data));
+}
+
+// description: posts requests to server
+// param: request Request from client to server
+// param: callback What to do with the data
+var postRequest = function(request, callback) {
+  var data = '';
+  request.on('data', function(chunk) { data += chunk; });
+  request.on('end', function() { callback(data); });
 }
 
 exports.requestHandler = requestHandler;
