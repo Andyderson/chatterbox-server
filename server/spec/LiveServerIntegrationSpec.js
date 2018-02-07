@@ -24,6 +24,14 @@ describe('server', function() {
     });
   });
 
+  it('should send back an object with a value', function(done) {
+    request('http://127.0.0.1:3000/classes/messages', function(error, response, body) {
+      var parsedBody = JSON.parse(body);
+      expect(parsedBody).to.be.an('object');
+      done();
+    });
+  });
+
   it('should send an object containing a `results` array', function(done) {
     request('http://127.0.0.1:3000/classes/messages', function(error, response, body) {
       var parsedBody = JSON.parse(body);
@@ -39,6 +47,20 @@ describe('server', function() {
       json: {
         username: 'Jono',
         message: 'Do my bidding!'}
+    };
+
+    request(requestParams, function(error, response, body) {
+      expect(response.statusCode).to.equal(201);
+      done();
+    });
+  });
+
+  it('POST requests to /classes/messages should have status 201', function(done) {
+    var requestParams = {method: 'POST',
+      uri: 'http://127.0.0.1:3000/classes/messages',
+      json: {
+        username: 'Smith',
+        message: 'nice!'}
     };
 
     request(requestParams, function(error, response, body) {

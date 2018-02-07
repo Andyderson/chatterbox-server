@@ -1,43 +1,74 @@
 var url = require('url');
 var storage = require('./storage.js');
-/*************************************************************
+var fs = require('fs');
+var bodyParser = require('body-parser');
+var path = require('path');
 
-You should implement your request handler function in this file.
+var express = require('express');
 
-requestHandler is already getting passed to http.createServer()
-in basic-server.js, but it won't work as is.
+var routes =  express.Router();
+routes.use(bodyParser.json({ type: 'application/json' }));
 
-You'll have to figure out a way to export this function from
-this file and include it in basic-server.js so that it actually works.
+/* client */
+routes.use('/', express.static(path.join(__dirname, '/../client')));
 
-*Hint* Check out the node module documentation at http://nodejs.org/api/modules.html.
 
-**************************************************************/
-var defaultCorsHeaders = { //TODO: research what defaultCorsHeaders is
+// routes.get('/', (request, response) => {
+//     response.sendFile(path.join(__dirname + '/../client/index.html'));
+// });
+
+/* classes/messages */
+routes.get('/classes/messages', (request, response) => {
+  response.send(storage);
+});
+
+routes.post('/classes/messages', (request, response) => {
+  console.log('!!!', request.body);
+
+  storage.results.push(request.body);
+  response.status(201).send(request.body);
+});
+
+routes.options('/classes/messages', (request, response) => {
+  response.send('options');
+})
+
+/* 404 */
+// routes.get('/', (request, response) => {
+//   response.send('hello worlvzadsvd');
+// });
+
+
+exports.routes = routes;
+
+/* ---------------- request handler ---------------- */
+
+var defaultCorsHeaders = { 
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'access-control-allow-headers': 'content-type, accept',
-  'access-control-max-age': 10 // Seconds.
+  'access-control-max-age': 10
 };
 
-
 var requestHandler = function(request, response) {
-  // Request and Response come from node's http module.
-  //
-  // They include information about both the incoming request, such as
-  // headers and URL, and about the outgoing response, such as its status
-  // and content.
-  //
-  // Documentation for both request and response can be found in the HTTP section at
-  // http://nodejs.org/documentation/api/
-
-  // Do some basic logging.
-  //
-  // Adding more logging to your server can be an easy way to get passive
-  // debugging help, but you should always be careful about leaving stray
-  // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
+  var handleChatterBox = function(request, response) {
+    console.log('test');
+
+    fs.readFile("/client", function(err, data){
+      console.log('index.html', data)
+
+      if(err) {
+        response.writeHead(404);
+        response.write("YOU GOT LOST!");
+      } else {
+        response.writeHead(200, {'Content-Type': 'text/html'});
+        response.write(data);
+      }
+      response.end();
+    });
+  }
 
   var handleRequestMessages = function(request, response) {
     var actions = {
@@ -52,9 +83,6 @@ var requestHandler = function(request, response) {
       },
       'OPTIONS': function(request, response) {
         sendResponse(response, 'Options', 201);
-       
-        //  response.writeHead(200, headers);
-        //  response.end();
       }
     };
 
@@ -75,6 +103,7 @@ var requestHandler = function(request, response) {
   };
 
   var routes = {
+    '/' : handleChatterBox,
     '/classes/messages': handleRequestMessages,
     '/classes/messages/usernames': handleRequestUsernames,
     '/classes/messages/roomnames': handleRequestRoomnames
@@ -93,18 +122,7 @@ var requestHandler = function(request, response) {
 
 var send404 = function(request, response) {
   sendResponse(response, 'Something nicer', 404);
-}
-
-// These headers will allow Cross-Origin Resource Sharing (CORS).
-// This code allows this server to talk to websites that
-// are on different domains, for instance, your chat client.
-//
-// Your chat client is running from a url like file://your/chat/client/index.html,
-// which is considered a different domain.
-//
-// Another way to get around this restriction is to serve you chat
-// client from this domain by setting up static file serving.
-
+};
 
 // description: Sending of data as a response to client
 // param: response Information to be sent to client in response to http request
@@ -116,7 +134,7 @@ var sendResponse = function(response, data, statusCode) {
   headers['Content-Type'] = 'application/json';
   response.writeHead(statusCode, headers);
   response.end(JSON.stringify(data));
-}
+};
 
 // description: posts requests to server
 // param: request Request from client to server
@@ -134,6 +152,6 @@ var postRequest = function(request, response, callback) {
   response.writeHead(statusCode, headers);
 
   response.end();
-}
+};
 
 exports.requestHandler = requestHandler;
